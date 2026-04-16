@@ -1,8 +1,8 @@
 from pathlib import Path
-
+from decouple import config
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-)%z0$yyl&0rnl#j*^h%67f1+f11zalql*k4106*%&2iovz+c=k'
+SECRET_KEY = config('SECRET_KEY')
 DEBUG = True
 ALLOWED_HOSTS = []
 
@@ -15,6 +15,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'core',
+    'rest_framework_simplejwt',
 ]
 
 MIDDLEWARE = [
@@ -48,8 +49,12 @@ WSGI_APPLICATION = 'hospital_project.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': config('DB_NAME'),
+        'USER': config('DB_USER'),
+        'PASSWORD': config('DB_PASSWORD'),
+        'HOST': config('DB_HOST'),
+        'PORT': config('DB_PORT'),
     }
 }
 
@@ -67,14 +72,14 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-# ✅ MEDIA (ONLY ONCE)
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# ✅ CUSTOM USER (ONLY ONCE)
+
 AUTH_USER_MODEL = 'core.User'
 
-# 🔥 DRF + JWT
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
