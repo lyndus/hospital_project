@@ -118,7 +118,7 @@ class Document(models.Model):
     file = models.ForeignKey(MedicalFile, on_delete=models.CASCADE)
     uploaded_by = models.ForeignKey(Doctor, on_delete=models.PROTECT)
     service = models.ForeignKey(Service, on_delete=models.PROTECT)
-    document_type = models.CharField(max_length=20, choices=DOCUMENT_CHOICES)
+    document_type = models.CharField(max_length=100, choices=DOCUMENT_CHOICES)
     file_name = models.CharField(max_length=255)
     file_path = models.FileField(upload_to="documents/")
     file_size = models.IntegerField(null=True, blank=True)
