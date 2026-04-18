@@ -84,6 +84,15 @@ class MedicalFile(models.Model):
     ]
     patient = models.OneToOneField(Patient, on_delete=models.CASCADE)
     created_at = models.DateField(auto_now_add=True)
+    last_edited_by = models.ForeignKey(
+        'Doctor',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='edited_files'
+    )
+    last_edited_at = models.DateTimeField(null=True, blank=True)
+    is_shared = models.BooleanField(default=False)
     height = models.DecimalField(max_digits=5, decimal_places=2)
     weight = models.DecimalField(max_digits=5, decimal_places=2)
     blood_type = models.CharField(max_length=3, choices=BLOOD_CHOICES)
@@ -92,7 +101,6 @@ class MedicalFile(models.Model):
 
     def __str__(self):
         return f"patient {self.patient.patient_first_name} {self.patient.patient_last_name} in {self.created_at}"
-
 
 # ----------------------------
 # Document
@@ -189,3 +197,5 @@ class VaccinationRecord(models.Model):
 
     def __str__(self):
         return f"{self.vaccine_name} by Dr. {self.administered_by.user.first_name}"
+    
+    
