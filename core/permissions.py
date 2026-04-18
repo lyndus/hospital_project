@@ -15,4 +15,11 @@ class IsGuardian(BasePermission):
 class IsAdminOrDoctor(BasePermission):
     def has_permission(self, request, view):
         return request.user.is_authenticated and request.user.role in ['admin', 'doctor']
+
+class IsOwnerGuardian(BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.role == 'guardian'
+
+    def has_object_permission(self, request, view, obj):
+        return obj.guardian == request.user
     
