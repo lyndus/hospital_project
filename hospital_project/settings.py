@@ -4,7 +4,7 @@ from datetime import timedelta # for token time
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config('SECRET_KEY')
-DEBUG = True
+DEBUG = False
 ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
@@ -71,8 +71,8 @@ TIME_ZONE = 'Africa/Algiers'
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = 'static/'
-
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -98,3 +98,5 @@ SIMPLE_JWT = {
 
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
+
+CSRF_TRUSTED_ORIGINS = ['https://web-production-873d3.up.railway.app']
