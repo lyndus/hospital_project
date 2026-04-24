@@ -624,6 +624,19 @@ def guardian_document_list(request, patient_id):
     return Response(DocumentSerializer(documents, many=True).data)
 
 
+@api_view(['GET'])
+@permission_classes([IsDoctor])
+def patient_search(request):
+    query = request.query_params.get('q', '')
+    if not query:
+        return Response({'error': 'Please provide a search query'}, status=400)
+    
+    patients = Patient.objects.filter(
+        Q(patient_first_name__icontains=query) |
+        Q(patient_last_name__icontains=query)
+    )
+    return Response(PatientSerializer(patients, many=True).data)
+
 # ========================
 # ANNOUNCEMENTS
 # ========================
