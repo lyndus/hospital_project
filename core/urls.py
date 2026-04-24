@@ -1,7 +1,6 @@
 from django.urls import path
 from . import views
-from django.conf import settings
-from django.conf.urls.static import static
+
 
 urlpatterns = [
     # Auth
@@ -27,6 +26,7 @@ urlpatterns = [
     path('patients/<int:pk>/', views.patient_detail),
     path('patients/<int:pk>/update/', views.patient_update),
     path('patients/<int:pk>/delete/', views.patient_delete),
+    path('patients/search/', views.patient_search),
 
     # Medical File
     path('patients/<int:patient_id>/medical-file/', views.medical_file_detail),
