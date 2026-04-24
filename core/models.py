@@ -45,10 +45,24 @@ class Doctor(models.Model):
 # Announcement
 # ----------------------------
 class Announcement(models.Model):
+    TARGET_CHOICES = [
+        ("all", "All Users"),
+        ("doctor", "Doctors"),
+        ("guardian", "Guardians"),
+        ("admin", "Admins"),
+    ]
+
     posted_by = models.ForeignKey(User, on_delete=models.CASCADE)
     content = models.TextField()
     is_active = models.BooleanField(default=False)
-    published_at = models.DateField(auto_now_add=True)
+    published_at = models.DateTimeField(auto_now_add=True)
+
+    # ✅ ONLY ADD THIS
+    target_audience = models.CharField(
+        max_length=20,
+        choices=TARGET_CHOICES,
+        default="all"
+    )
 
     def __str__(self):
         return f"Announcement by {self.posted_by.get_full_name()} — {self.published_at}"
@@ -188,7 +202,7 @@ class Appointment(models.Model):
 # ----------------------------
 class VaccinationRecord(models.Model):
     STATUS_CHOICES = [("administered", "Administered"), ("scheduled", "Scheduled")]
-    patient = models.ForeignKey(Patient, on_delete=models.PROTECT)
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE)
     administered_by = models.ForeignKey(Doctor, on_delete=models.PROTECT)
     vaccine_name = models.CharField(max_length=100)
     date_administered = models.DateField()
@@ -198,4 +212,4 @@ class VaccinationRecord(models.Model):
     def __str__(self):
         return f"{self.vaccine_name} by Dr. {self.administered_by.user.first_name}"
     
-    
+ 
