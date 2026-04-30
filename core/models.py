@@ -69,7 +69,7 @@ class Patient(models.Model):
         ("female", "Female"),
         ("male", "Male"),
     ]
-    guardian = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={"role": "guardian"})
+    guardian = models.ForeignKey(User, on_delete=models.PROTECT, limit_choices_to={"role": "guardian"})
     created_by = models.ForeignKey(Doctor, on_delete=models.PROTECT)
     patient_first_name = models.CharField(max_length=100)
     patient_last_name = models.CharField(max_length=100)
@@ -89,7 +89,7 @@ class MedicalFile(models.Model):
         ("a+", "A+"), ("a-", "A-"), ("b+", "B+"), ("b-", "B-"),
         ("o+", "O+"), ("o-", "O-"), ("ab+", "AB+"), ("ab-", "AB-"),
     ]
-    patient = models.OneToOneField(Patient, on_delete=models.CASCADE)
+    patient = models.OneToOneField(Patient, on_delete=models.PROTECT)
     created_at = models.DateField(auto_now_add=True)
     last_edited_by = models.ForeignKey(
         'Doctor',
@@ -99,7 +99,6 @@ class MedicalFile(models.Model):
         related_name='edited_files'
     )
     last_edited_at = models.DateTimeField(null=True, blank=True)
-    is_shared = models.BooleanField(default=False)
     height = models.DecimalField(max_digits=5, decimal_places=2)
     weight = models.DecimalField(max_digits=5, decimal_places=2)
     blood_type = models.CharField(max_length=3, choices=BLOOD_CHOICES)
