@@ -106,7 +106,6 @@ class MedicalFile(models.Model):
         related_name='edited_files'
     )
     last_edited_at = models.DateTimeField(null=True, blank=True)
-    is_shared = models.BooleanField(default=False)
     height = models.DecimalField(max_digits=5, decimal_places=2)
     weight = models.DecimalField(max_digits=5, decimal_places=2)
     blood_type = models.CharField(max_length=3, choices=BLOOD_CHOICES)

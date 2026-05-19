@@ -104,7 +104,7 @@ class MedicalFileSerializer(serializers.ModelSerializer):
     class Meta:
         model = MedicalFile
         fields = '__all__'
-        read_only_fields = ['patient', 'created_at', 'last_edited_by', 'last_edited_at', 'is_shared']
+        read_only_fields = ['patient', 'created_at', 'last_edited_by', 'last_edited_at' ]
 
     def validate_height(self, value):
         if value is not None and value <= 0:
@@ -176,15 +176,16 @@ class ScheduleSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Start time must be before end time.")
         return data
 
-
 # ========================
 # APPOINTMENT SERIALIZER
 # ========================
 class AppointmentSerializer(serializers.ModelSerializer):
+    doctor_name = serializers.CharField(write_only=True, required=False)  # ← ADD THIS
+
     class Meta:
         model = Appointment
         fields = '__all__'
-        read_only_fields = ['queue_number', 'qr_code']
+        read_only_fields = ['queue_number', 'qr_code', 'service', 'doctor']  # ← add service and doctor
 
     def validate_guest_phone(self, value):
         if value:
@@ -209,7 +210,6 @@ class AppointmentSerializer(serializers.ModelSerializer):
         if value < timezone.now().date():
             raise serializers.ValidationError("Appointment date cannot be in the past.")
         return value
-
 
 # ========================
 # VACCINATION SERIALIZER
