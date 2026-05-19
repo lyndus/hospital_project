@@ -1220,3 +1220,125 @@ def admin_dashboard(request):
         ],
         'most_booked_service': most_booked_service['service__name'] if most_booked_service else None,
     })
+# ========================
+# DOCTOR AVAILABILITY & SLOTS
+# ========================
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def doctor_availability(request, pk):
+    try:
+        doctor = Doctor.objects.get(pk=pk)
+    except Doctor.DoesNotExist:
+        return Response({'error': 'Doctor not found'}, status=404)
+
+    schedules = Schedule.objects.filter(doctor=doctor)
+    return Response({
+        'doctor': f"Dr. {doctor.user.first_name} {doctor.user.last_name}",
+        'service': doctor.service.name,
+        'availability': [{
+            'day': s.day_of_week,
+            'start_time': s.start_time,
+            'end_time': s.end_time,
+            'max_appointments': s.max_appointments,
+        } for s in schedules]
+    })
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def doctor_slots(request, pk):
+    try:
+        doctor = Doctor.objects.get(pk=pk)
+    except Doctor.DoesNotExist:
+        return Response({'error': 'Doctor not found'}, status=404)
+
+    date_str = request.query_params.get('date')
+    if not date_str:
+        return Response({'error': 'date parameter is required'}, status=400)
+
+    try:
+        date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+    except ValueError:
+        return Response({'error': 'Invalid date format. Use YYYY-MM-DD'}, status=400)
+
+    day_name = date_obj.strftime('%A').lower()
+
+    schedule = Schedule.objects.filter(
+        doctor=doctor,
+        day_of_week=day_name
+    ).first()
+
+    if not schedule:
+        return Response({
+            'available': False,
+            'message': f"Dr. {doctor.user.first_name} {doctor.user.last_name} does not work on {day_name.capitalize()}"
+        })
+
+    booked = Appointment.objects.filter(
+        doctor=doctor,
+        appointment_date=date_str,
+        appointment_status__in=['pending', 'confirmed']
+    ).count()
+
+    remaining = schedule.max_appointments - booked
+
+    return Response({
+        'doctor': f"Dr. {doctor.user.first_name} {doctor.user.last_name}",
+        'date': date_str,
+        'day': day_name.capitalize(),
+        'available': remaining > 0,
+        'remaining_slots': remaining,
+        'max_slots': schedule.max_appointments,
+        'booked': booked,
+    })
+
+
+# ========================
+# FILTERS
+# ========================
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def appointment_filter(request):
+    user = request.user
+
+    if user.role == 'admin':
+        appointments = Appointment.objects.all()
+    elif user.role == 'doctor':
+        try:
+            doctor = Doctor.objects.get(user=user)
+        except Doctor.DoesNotExist:
+            return Response({'error': 'Doctor profile not found'}, status=404)
+        appointments = Appointment.objects.filter(doctor=doctor)
+    elif user.role == 'guardian':
+        appointments = Appointment.objects.filter(patient__guardian=user)
+    else:
+        appointments = Appointment.objects.none()
+
+    # Filter by date
+    date_filter = request.query_params.get('date')
+    if date_filter:
+        appointments = appointments.filter(appointment_date=date_filter)
+
+    # Filter by status
+    status_filter = request.query_params.get('status')
+    if status_filter:
+        appointments = appointments.filter(appointment_status=status_filter)
+
+    return Response(AppointmentSerializer(appointments, many=True).data)
+
+
+@api_view(['GET'])
+@permission_classes([IsDoctor])
+def patient_filter(request):
+    # Filter by created_by=me
+    created_by = request.query_params.get('created_by')
+    if created_by == 'me':
+        try:
+            doctor = Doctor.objects.get(user=request.user)
+        except Doctor.DoesNotExist:
+            return Response({'error': 'Doctor profile not found'}, status=404)
+        patients = Patient.objects.filter(created_by=doctor)
+    else:
+        patients = Patient.objects.all()
+
+    return Response(PatientSerializer(patients, many=True).data)

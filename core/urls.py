@@ -31,6 +31,8 @@ urlpatterns = [
     path('doctors/<int:pk>/', views.doctor_detail),
     path('doctors/<int:pk>/update/', views.doctor_update),
     path('doctors/<int:pk>/delete/', views.doctor_delete),
+    path('doctors/<int:pk>/availability/', views.doctor_availability),
+    path('doctors/<int:pk>/slots/', views.doctor_slots),
 
     # ========================
     # PATIENTS
@@ -39,6 +41,7 @@ urlpatterns = [
     path('patients/', views.patient_list),
     path('patients/create/', views.patient_create),
     path('patients/search/', views.patient_search),
+    path('patients/filter/', views.patient_filter),  # ← ADD HERE
     path('patients/<int:pk>/', views.patient_detail),
     path('patients/<int:pk>/update/', views.patient_update),
     path('patients/<int:pk>/delete/', views.patient_delete),
@@ -91,6 +94,7 @@ urlpatterns = [
     # ========================
     path('appointments/', views.appointment_list),
     path('appointments/create/', views.appointment_create),
+    path('appointments/filter/', views.appointment_filter),  # ← ADD HERE
     path('appointments/<int:pk>/', views.appointment_detail),
     path('appointments/<int:pk>/update/', views.appointment_update),
     path('appointments/<int:pk>/delete/', views.appointment_delete),

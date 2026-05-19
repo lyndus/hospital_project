@@ -72,9 +72,18 @@ class DoctorSerializer(serializers.ModelSerializer):
 # PATIENT SERIALIZER
 # ========================
 class PatientSerializer(serializers.ModelSerializer):
+    guardian_full_name = serializers.SerializerMethodField(read_only=True)
+    created_by_name = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = Patient
         fields = '__all__'
+
+    def get_guardian_full_name(self, obj):
+        return f"{obj.guardian.first_name} {obj.guardian.last_name}"
+
+    def get_created_by_name(self, obj):
+        return f"Dr. {obj.created_by.user.first_name} {obj.created_by.user.last_name}"
 
     def validate_patient_first_name(self, value):
         if not re.match(r'^[a-zA-ZÀ-ÿ\s]+$', value):
@@ -95,7 +104,6 @@ class PatientSerializer(serializers.ModelSerializer):
         if value not in ['male', 'female']:
             raise serializers.ValidationError("Gender must be male or female.")
         return value
-
 
 # ========================
 # MEDICAL FILE SERIALIZER
@@ -180,12 +188,20 @@ class ScheduleSerializer(serializers.ModelSerializer):
 # APPOINTMENT SERIALIZER
 # ========================
 class AppointmentSerializer(serializers.ModelSerializer):
-    doctor_name = serializers.CharField(write_only=True, required=False)  # ← ADD THIS
+    doctor_name = serializers.CharField(write_only=True, required=False)
+    doctor_full_name = serializers.SerializerMethodField(read_only=True)
+    service_name = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Appointment
         fields = '__all__'
-        read_only_fields = ['queue_number', 'qr_code', 'service', 'doctor']  # ← add service and doctor
+        read_only_fields = ['queue_number', 'qr_code', 'service', 'doctor']
+
+    def get_doctor_full_name(self, obj):
+        return f"Dr. {obj.doctor.user.first_name} {obj.doctor.user.last_name}"
+
+    def get_service_name(self, obj):
+        return obj.service.name
 
     def validate_guest_phone(self, value):
         if value:
@@ -203,7 +219,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
 
     def validate_guest_last_name(self, value):
         if value and not re.match(r'^[a-zA-ZÀ-ÿ\s]+$', value):
-            raise serializers.ValidationError("Last name must contain letters only.")
+            raise serializers.ValidationError("First name must contain letters only.")
         return value
 
     def validate_appointment_date(self, value):
