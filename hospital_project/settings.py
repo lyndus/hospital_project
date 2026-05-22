@@ -5,7 +5,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config('SECRET_KEY') 
 DEBUG = False
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['web-production-aba75.up.railway.app']
 
 INSTALLED_APPS = [
     'django.contrib.auth',
@@ -111,6 +111,7 @@ SIMPLE_JWT = {
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
     'http://localhost:3000',
+    'https://web-production-aba75.up.railway.app',
 ]
 
-CSRF_TRUSTED_ORIGINS = ['https://web-production-873d3.up.railway.app']
+CSRF_TRUSTED_ORIGINS = ['https://web-production-aba75.up.railway.app']
