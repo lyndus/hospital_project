@@ -204,4 +204,27 @@ class VaccinationRecord(models.Model):
     def __str__(self):
         return f"{self.vaccine_name} by Dr. {self.administered_by.user.first_name}"
     
-    
+# Audit Log
+# tracks all critical actions performed on medical data
+# tracked models: Patient,MadicalFile,Document
+
+class AuditLog(models.Model):
+    ACTION_CHOICES = [
+        ("created","Created"),
+        ("updated","Updated"),
+        ("deleted","Deleted"),
+        ("visability_toggled","Visibility Toggle"),
+    ]   
+    performed_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True
+    )
+    action =models.CharField(max_length=20, choices=ACTION_CHOICES)
+    models_name = models.CharField(max_length=50)
+    record_id = models.IntegerField()
+    notes = models.TextField(blank=True,null=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.performed_by} {self.action} #{self.record_id}"

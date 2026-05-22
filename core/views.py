@@ -388,6 +388,13 @@ def patient_create(request):
                 allergies=request.data.get('allergies', ''),
                 chronic_condition=request.data.get('chronic_condition', '')
             )
+            AuditLog.objects.create(
+               performed_by=request.user,
+               action="created",
+               model_name="Patient",
+               record_id=patient.id,
+               notes=f"Patient {patient.patient_first_name} {patient.patient_last_name} created"
+            )
 
         response_data = {
             'message': 'Patient and medical file created successfully',
@@ -424,6 +431,7 @@ def patient_update(request, pk):
         serializer.save()
         return Response(serializer.data)
     return Response(serializer.errors, status=400)
+    
 
 
 @api_view(['DELETE'])
@@ -433,6 +441,13 @@ def patient_delete(request, pk):
         patient = Patient.objects.get(pk=pk)
     except Patient.DoesNotExist:
         return Response({'error': 'Patient not found'}, status=404)
+    AuditLog.objects.create(
+        performed_by=request.user,
+        action="deleted",
+        model_name="Patient",
+        record_id=patient.id,
+        notes=f"Patient {patient.patient_first_name} {patient.patient_last_name} deleted"
+    )
     patient.delete()
     return Response({'message': 'Patient and all related data deleted'}, status=204)
 
@@ -486,6 +501,13 @@ def medical_file_update(request, patient_id):
     serializer = MedicalFileSerializer(medical_file, data=request.data, partial=True)
     if serializer.is_valid():
         serializer.save(last_edited_by=requesting_doctor, last_edited_at=timezone.now())
+        AuditLog.objects.create(
+            performed_by=request.user,
+            action="updated",
+            model_name="MedicalFile",
+            record_id=medical_file.id,
+            notes=f"Medical file of patient #{patient_id} updated"
+        )
         return Response({'message': 'Medical file updated successfully', 'data': serializer.data})
     return Response(serializer.errors, status=400)
 
@@ -598,6 +620,13 @@ def document_create(request, patient_id):
     serializer = DocumentSerializer(data=request.data)
     if serializer.is_valid():
         serializer.save(file=medical_file, uploaded_by=doctor, service=doctor.service)
+        AuditLog.objects.create(
+            performed_by=request.user,
+            action="created",
+            model_name="Document",
+            record_id=serializer.instance.id,
+            notes=f"Document '{serializer.instance.file_name}' uploaded for patient #{patient_id}"
+        )
         return Response(serializer.data, status=201)
     return Response(serializer.errors, status=400)
 
@@ -636,7 +665,13 @@ def document_delete(request, patient_id, document_id):
         return Response({'error': 'Medical file not found'}, status=404)
     except Document.DoesNotExist:
         return Response({'error': 'Document not found'}, status=404)
-
+    AuditLog.objects.create(
+        performed_by=request.user,
+        action="deleted",
+        model_name="Document",
+        record_id=document.id,
+        notes=f"Document '{document.file_name}' deleted for patient #{patient_id}"
+    )
     document.delete()
     return Response({'message': 'Document deleted'}, status=204)
 
@@ -657,6 +692,13 @@ def document_toggle_visibility(request, patient_id, document_id):
 
     document.is_visible = not document.is_visible
     document.save()
+    AuditLog.objects.create(
+        performed_by=request.user,
+        action="visibility_toggled",
+        model_name="Document",
+        record_id=document.id,
+        notes=f"Document '{document.file_name}' visibility set to {document.is_visible} for patient #{patient_id}"
+    )
     return Response({
         'message': f"Document is now {'visible' if document.is_visible else 'hidden'} to guardian",
         'is_visible': document.is_visible
