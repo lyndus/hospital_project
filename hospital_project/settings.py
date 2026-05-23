@@ -6,7 +6,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY') 
 DEBUG = False
 #ALLOWED_HOSTS = ['web-production-aba75.up.railway.app'] // for railway
-ALLOWED_HOSTS = ['https://pediatric-hms.onrender.com']
+ALLOWED_HOSTS = ['pediatric-hms.onrender.com']
 
 INSTALLED_APPS = [
     'django.contrib.auth',
