@@ -8,7 +8,7 @@
       "last_name": "Système",
       "email": "admin@arcio.com",
       "phone": "513877572",
-      "password": "pbkdf2_sha256$1200000$O8VT/izerCOnrU6mWo8d6A$fxZ5bOpNqfvtuOj7pEkQx2lrk6hG2gpvonMjHFN2gOE=",
+      "password": "pbkdf2_sha256$1200000$tmixvigMPG88ukQ5JYJbOd$JZD9HrxGEPFEotR2jcoohE42Hkuu3yhzNCLRFRZf46I=",
       "address": "36 Rue Larbi Ben Mhidi, Batna",
       "role": "admin",
       "is_active": true,
