@@ -219,11 +219,7 @@ def service_delete(request, pk):
 # ========================
 # DOCTORS
 # ========================
-@api_view(['GET'])
-@permission_classes([IsAdminOrDoctor])
-def doctor_list(request):
-    doctors = Doctor.objects.all()
-    return Response(DoctorSerializer(doctors, many=True).data)
+
 
 
 @api_view(['POST'])
@@ -1342,6 +1338,26 @@ def patient_filter(request):
         patients = Patient.objects.all()
 
     return Response(PatientSerializer(patients, many=True).data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAdminOrDoctor])
+def doctor_list(request):
+    doctors = Doctor.objects.select_related('user', 'service').all()
+    return Response([
+        {
+            'id': d.id,
+            'first_name': d.user.first_name,
+            'last_name': d.user.last_name,
+            'full_name': f"Dr. {d.user.first_name} {d.user.last_name}",
+            'email': d.user.email,
+            'phone': d.user.phone,
+            'service': d.service.name,
+            'service_id': d.service.id,
+            'grade': d.grade,
+        }
+        for d in doctors
+    ])
 
 
 @api_view(['GET'])
