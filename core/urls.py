@@ -16,7 +16,7 @@ urlpatterns = [
     # ========================
     # SERVICES
     # ========================
-    path('services/public/', views.service_list_public),       # anyone can see service names
+    path('services/public/', views.service_list_public),
     path('services/', views.service_list),
     path('services/create/', views.service_create),
     path('services/<int:pk>/', views.service_detail),
@@ -26,6 +26,7 @@ urlpatterns = [
     # ========================
     # DOCTORS
     # ========================
+    path('doctors/public/', views.doctor_list_public),  # ← ADDED
     path('doctors/', views.doctor_list),
     path('doctors/create/', views.doctor_create),
     path('doctors/<int:pk>/', views.doctor_detail),
@@ -41,7 +42,7 @@ urlpatterns = [
     path('patients/', views.patient_list),
     path('patients/create/', views.patient_create),
     path('patients/search/', views.patient_search),
-    path('patients/filter/', views.patient_filter),  # ← ADD HERE
+    path('patients/filter/', views.patient_filter),
     path('patients/<int:pk>/', views.patient_detail),
     path('patients/<int:pk>/update/', views.patient_update),
     path('patients/<int:pk>/delete/', views.patient_delete),
@@ -94,7 +95,7 @@ urlpatterns = [
     # ========================
     path('appointments/', views.appointment_list),
     path('appointments/create/', views.appointment_create),
-    path('appointments/filter/', views.appointment_filter),  # ← ADD HERE
+    path('appointments/filter/', views.appointment_filter),
     path('appointments/<int:pk>/', views.appointment_detail),
     path('appointments/<int:pk>/update/', views.appointment_update),
     path('appointments/<int:pk>/delete/', views.appointment_delete),

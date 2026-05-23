@@ -1342,3 +1342,18 @@ def patient_filter(request):
         patients = Patient.objects.all()
 
     return Response(PatientSerializer(patients, many=True).data)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def doctor_list_public(request):
+    doctors = Doctor.objects.select_related('user', 'service').all()
+    return Response([
+        {
+            'id': d.id,
+            'full_name': f"Dr. {d.user.first_name} {d.user.last_name}",
+            'service': d.service.name,
+            'grade': d.grade,
+        }
+        for d in doctors
+    ])
