@@ -692,11 +692,16 @@ def announcement_create(request):
 def announcement_list(request):
     user = request.user
     role = user.role if user.is_authenticated else "guest"
-    announcements = Announcement.objects.filter(
-        is_active=True
-    ).filter(
-        Q(target_audience="all") | Q(target_audience=role)
-    ).order_by('-published_at')
+
+    if user.is_authenticated and user.role == 'admin':
+        announcements = Announcement.objects.filter(is_active=True).order_by('-published_at')
+    else:
+        announcements = Announcement.objects.filter(
+            is_active=True
+        ).filter(
+            Q(target_audience="all") | Q(target_audience=role)
+        ).order_by('-published_at')
+
     return Response(AnnouncementSerializer(announcements, many=True).data)
 
 
