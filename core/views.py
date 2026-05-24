@@ -222,9 +222,35 @@ def service_delete(request, pk):
 @api_view(['GET'])
 @permission_classes([IsAdminOrDoctor])
 def doctor_list(request):
-    doctors = Doctor.objects.all()
-    return Response(DoctorSerializer(doctors, many=True).data)
+    doctors = Doctor.objects.select_related('user', 'service').all()
+    return Response([
+        {
+            'id': d.id,
+            'first_name': d.user.first_name,
+            'last_name': d.user.last_name,
+            'full_name': f"Dr. {d.user.first_name} {d.user.last_name}",
+            'email': d.user.email,
+            'phone': d.user.phone,
+            'service': d.service.name,
+            'service_id': d.service.id,
+            'grade': d.grade,
+        }
+        for d in doctors
+    ])
 
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def doctor_list_public(request):
+    doctors = Doctor.objects.select_related('user', 'service').all()
+    return Response([
+        {
+            'id': d.id,
+            'full_name': f"Dr. {d.user.first_name} {d.user.last_name}",
+            'service': d.service.name,
+            'grade': d.grade,
+        }
+        for d in doctors
+    ])
 
 @api_view(['POST'])
 @permission_classes([IsAdmin])
@@ -738,13 +764,17 @@ def announcement_create(request):
 def announcement_list(request):
     user = request.user
     role = user.role if user.is_authenticated else "guest"
-    announcements = Announcement.objects.filter(
-        is_active=True
-    ).filter(
-        Q(target_audience="all") | Q(target_audience=role)
-    ).order_by('-published_at')
-    return Response(AnnouncementSerializer(announcements, many=True).data)
 
+    if user.is_authenticated and user.role == 'admin':
+        announcements = Announcement.objects.filter(is_active=True).order_by('-published_at')
+    else:
+        announcements = Announcement.objects.filter(
+            is_active=True
+        ).filter(
+            Q(target_audience="all") | Q(target_audience=role)
+        ).order_by('-published_at')
+
+    return Response(AnnouncementSerializer(announcements, many=True).data)
 
 @api_view(['PUT'])
 @permission_classes([IsAdmin])
