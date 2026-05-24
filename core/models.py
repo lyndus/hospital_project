@@ -51,18 +51,11 @@ class Announcement(models.Model):
         ("guardian", "Guardians"),
         ("admin", "Admins"),
     ]
-
     posted_by = models.ForeignKey(User, on_delete=models.CASCADE)
     content = models.TextField()
     is_active = models.BooleanField(default=False)
     published_at = models.DateTimeField(auto_now_add=True)
-
-    # ✅ ONLY ADD THIS
-    target_audience = models.CharField(
-        max_length=20,
-        choices=TARGET_CHOICES,
-        default="all"
-    )
+    target_audience = models.CharField(max_length=20, choices=TARGET_CHOICES, default="all")
 
     def __str__(self):
         return f"Announcement by {self.posted_by.get_full_name()} — {self.published_at}"
@@ -114,6 +107,7 @@ class MedicalFile(models.Model):
 
     def __str__(self):
         return f"patient {self.patient.patient_first_name} {self.patient.patient_last_name} in {self.created_at}"
+
 
 # ----------------------------
 # Document
@@ -179,15 +173,22 @@ class Appointment(models.Model):
     service = models.ForeignKey(Service, on_delete=models.PROTECT)
     doctor = models.ForeignKey(Doctor, on_delete=models.PROTECT)
     patient = models.ForeignKey(Patient, null=True, blank=True, on_delete=models.SET_NULL)
-    guest_first_name = models.CharField(max_length=100, blank=True, null=True)  # ← optional now
-    guest_last_name = models.CharField(max_length=100, blank=True, null=True)   # ← optional now
-    guest_phone = models.CharField(max_length=20, blank=True, null=True)        # ← optional now
+    guest_first_name = models.CharField(max_length=100, blank=True, default='')
+    guest_last_name = models.CharField(max_length=100, blank=True, default='')
+    guest_phone = models.CharField(max_length=20, blank=True, default='')
     appointment_date = models.DateField()
-    appointment_time = models.TimeField(null=True, blank=True)                  # ← NEW
+    appointment_time = models.TimeField(null=True, blank=True)
     queue_number = models.IntegerField()
     qr_code = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     appointment_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
     created_at = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.guest_first_name} {self.guest_last_name} — {self.appointment_date}"
+
+    def clean(self):
+        if not self.patient and not self.guest_first_name:
+            raise ValidationError("Appointment must have a patient or guest info.")
 
 
 # ----------------------------
@@ -204,4 +205,3 @@ class VaccinationRecord(models.Model):
 
     def __str__(self):
         return f"{self.vaccine_name} by Dr. {self.administered_by.user.first_name}"
-    

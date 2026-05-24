@@ -843,43 +843,33 @@ def appointment_list(request):
         appointments = Appointment.objects.none()
     return Response(AppointmentSerializer(appointments, many=True).data)
 
-
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def appointment_create(request):
     try:
-        service_id = request.data.get('service_id')
-        doctor_id = request.data.get('doctor_id')
+        doctor_name = request.data.get('doctor_name')
         appointment_date = request.data.get('appointment_date')
-        appointment_time = request.data.get('appointment_time')
 
-        # ── Required fields ──
-        if not service_id or not doctor_id or not appointment_date or not appointment_time:
-            return Response({'error': 'service_id, doctor_id, appointment_date and appointment_time are required'}, status=400)
+        if not doctor_name or not appointment_date:
+            return Response({'error': 'doctor_name and appointment_date are required'}, status=400)
 
-        # ── Valid time slots ──
-        valid_slots = [
-            '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-            '14:00', '14:30', '15:00', '15:30', '16:00', '16:30'
-        ]
-        if appointment_time not in valid_slots:
-            return Response({
-                'error': 'Invalid time slot. Choose from: 09:00–11:30 or 14:00–16:30 every 30 minutes.'
-            }, status=400)
+        name_parts = doctor_name.strip().split()
+        if len(name_parts) < 2:
+            return Response({'error': 'Please enter both first and last name of the doctor'}, status=400)
 
-        # ── Check service ──
+        first_name = name_parts[0]
+        last_name = ' '.join(name_parts[1:])
+
         try:
-            service = Service.objects.get(pk=service_id)
-        except Service.DoesNotExist:
-            return Response({'error': 'Service not found'}, status=404)
-
-        # ── Check doctor belongs to service ──
-        try:
-            doctor = Doctor.objects.get(pk=doctor_id, service=service)
+            doctor = Doctor.objects.get(
+                user__first_name__iexact=first_name,
+                user__last_name__iexact=last_name
+            )
         except Doctor.DoesNotExist:
-            return Response({'error': 'Doctor not found in this service'}, status=404)
+            return Response({'error': 'No doctor found with that name'}, status=404)
+        except Doctor.MultipleObjectsReturned:
+            return Response({'error': 'Multiple doctors found with that name, please contact the clinic'}, status=400)
 
-        # ── Check doctor works on that day ──
         appointment_date_obj = datetime.strptime(appointment_date, '%Y-%m-%d').date()
         day_name = appointment_date_obj.strftime('%A').lower()
 
@@ -893,20 +883,6 @@ def appointment_create(request):
                 'error': f"Dr. {doctor.user.first_name} {doctor.user.last_name} does not work on {day_name.capitalize()}"
             }, status=400)
 
-        # ── Check time slot not already taken ──
-        slot_taken = Appointment.objects.filter(
-            doctor=doctor,
-            appointment_date=appointment_date,
-            appointment_time=appointment_time,
-            appointment_status__in=['pending', 'confirmed']
-        ).exists()
-
-        if slot_taken:
-            return Response({
-                'error': f"The {appointment_time} slot is already booked. Please choose another time."
-            }, status=400)
-
-        # ── Check max appointments not exceeded ──
         current_count = Appointment.objects.filter(
             doctor=doctor,
             appointment_date=appointment_date,
@@ -918,10 +894,18 @@ def appointment_create(request):
                 'error': f"Dr. {doctor.user.first_name} {doctor.user.last_name} is fully booked on {day_name.capitalize()}"
             }, status=400)
 
-        # ── Patient or guest ──
         patient_id = request.data.get('patient_id')
-        patient = None
+        guest_first = request.data.get('guest_first_name', '').strip()
+        guest_last = request.data.get('guest_last_name', '').strip()
+        guest_phone = request.data.get('guest_phone', '').strip()
 
+        if not patient_id:
+            if not guest_first or not guest_last or not guest_phone:
+                return Response({
+                    'error': 'guest_first_name, guest_last_name, and guest_phone are required when no patient is linked'
+                }, status=400)
+
+        patient = None
         if patient_id:
             try:
                 patient = Patient.objects.get(pk=patient_id)
@@ -940,7 +924,6 @@ def appointment_create(request):
                     'error': 'This patient already has an active appointment with this doctor on that date'
                 }, status=400)
 
-        # ── Queue number ──
         last = Appointment.objects.filter(
             doctor=doctor,
             appointment_date=appointment_date
@@ -948,23 +931,19 @@ def appointment_create(request):
 
         queue_number = (last or 0) + 1
 
-        # ── Save ──
         serializer = AppointmentSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(
                 queue_number=queue_number,
-                service=service,
+                service=doctor.service,
                 doctor=doctor,
-                patient=patient,
-                appointment_time=appointment_time,
+                patient=patient
             )
             return Response({
                 'message': 'Appointment booked successfully',
                 'doctor': f"Dr. {doctor.user.first_name} {doctor.user.last_name}",
-                'service': service.name,
-                'date': appointment_date,
+                'service': doctor.service.name,
                 'day': day_name.capitalize(),
-                'time': appointment_time,
                 'queue_number': queue_number,
                 'data': serializer.data
             }, status=201)
@@ -972,7 +951,6 @@ def appointment_create(request):
 
     except Exception as e:
         return Response({'error': str(e)}, status=400)
-
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
