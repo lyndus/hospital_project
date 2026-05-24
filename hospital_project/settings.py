@@ -7,6 +7,7 @@ SECRET_KEY = config('SECRET_KEY')
 DEBUG = False
 ALLOWED_HOSTS = ['web-production-aba75.up.railway.app'] 
 #ALLOWED_HOSTS = ['pediatric-hms.onrender.com']
+CORS_ALLOW_CREDENTIALS = True#add for fix login
 
 INSTALLED_APPS = [
     'django.contrib.auth',
