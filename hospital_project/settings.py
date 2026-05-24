@@ -5,8 +5,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config('SECRET_KEY') 
 DEBUG = False
-ALLOWED_HOSTS = ['*']
-#ALLOWED_HOSTS = ['web-production-aba75.up.railway.app'] 
+ALLOWED_HOSTS = ['web-production-aba75.up.railway.app'] 
 #ALLOWED_HOSTS = ['pediatric-hms.onrender.com']
 
 INSTALLED_APPS = [
