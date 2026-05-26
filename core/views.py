@@ -853,6 +853,14 @@ def appointment_create(request):
         if not doctor_name or not appointment_date:
             return Response({'error': 'doctor_name and appointment_date are required'}, status=400)
 
+        try:
+            appointment_date_obj = datetime.strptime(appointment_date, '%Y-%m-%d').date()
+        except ValueError:
+            return Response({'error': 'Invalid date format. Use YYYY-MM-DD'}, status=400)
+
+        if appointment_date_obj < date.today():
+            return Response({'error': 'Appointment date cannot be in the past'}, status=400)
+
         name_parts = doctor_name.strip().split()
         if len(name_parts) < 2:
             return Response({'error': 'Please enter both first and last name of the doctor'}, status=400)
@@ -870,9 +878,7 @@ def appointment_create(request):
         except Doctor.MultipleObjectsReturned:
             return Response({'error': 'Multiple doctors found with that name, please contact the clinic'}, status=400)
 
-        appointment_date_obj = datetime.strptime(appointment_date, '%Y-%m-%d').date()
         day_name = appointment_date_obj.strftime('%A').lower()
-
         schedule = Schedule.objects.filter(
             doctor=doctor,
             day_of_week__iexact=day_name
@@ -898,11 +904,31 @@ def appointment_create(request):
         guest_first = request.data.get('guest_first_name', '').strip()
         guest_last = request.data.get('guest_last_name', '').strip()
         guest_phone = request.data.get('guest_phone', '').strip()
+        cleaned_phone = None  # initialize here so it's accessible later
 
         if not patient_id:
             if not guest_first or not guest_last or not guest_phone:
                 return Response({
                     'error': 'guest_first_name, guest_last_name, and guest_phone are required when no patient is linked'
+                }, status=400)
+
+            # Clean and validate Algerian phone number
+            cleaned_phone = re.sub(r'[\s\-]', '', guest_phone)
+            if not re.match(r'^0[567]\d{8}$', cleaned_phone):
+                return Response({
+                    'error': 'Phone number must start with 05, 06, or 07 and be exactly 10 digits'
+                }, status=400)
+
+            already_booked = Appointment.objects.filter(
+                appointment_date=appointment_date,
+                guest_phone=cleaned_phone,
+                service=doctor.service,
+                appointment_status__in=['pending', 'confirmed']
+            ).exists()
+
+            if already_booked:
+                return Response({
+                    'error': 'This phone number already has an active appointment in this service on that date'
                 }, status=400)
 
         patient = None
@@ -914,14 +940,14 @@ def appointment_create(request):
 
             already_booked = Appointment.objects.filter(
                 patient=patient,
-                doctor=doctor,
+                service=doctor.service,
                 appointment_date=appointment_date,
                 appointment_status__in=['pending', 'confirmed']
             ).exists()
 
             if already_booked:
                 return Response({
-                    'error': 'This patient already has an active appointment with this doctor on that date'
+                    'error': 'This patient already has an active appointment in this service on that date'
                 }, status=400)
 
         last = Appointment.objects.filter(
@@ -931,7 +957,12 @@ def appointment_create(request):
 
         queue_number = (last or 0) + 1
 
-        serializer = AppointmentSerializer(data=request.data)
+        # Merge cleaned phone into request data before passing to serializer
+        data = request.data.copy()
+        if cleaned_phone:
+            data['guest_phone'] = cleaned_phone
+
+        serializer = AppointmentSerializer(data=data)
         if serializer.is_valid():
             serializer.save(
                 queue_number=queue_number,
@@ -944,7 +975,9 @@ def appointment_create(request):
                 'doctor': f"Dr. {doctor.user.first_name} {doctor.user.last_name}",
                 'service': doctor.service.name,
                 'day': day_name.capitalize(),
+                'working_hours': f"{schedule.start_time} - {schedule.end_time}",
                 'queue_number': queue_number,
+                'remaining_slots': schedule.max_appointments - current_count - 1,
                 'data': serializer.data
             }, status=201)
         return Response(serializer.errors, status=400)
