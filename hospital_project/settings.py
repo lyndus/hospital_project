@@ -1,6 +1,7 @@
 from pathlib import Path
 from decouple import config
 from datetime import timedelta # for token time 
+import cloudinary
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config('SECRET_KEY') 
@@ -21,6 +22,8 @@ INSTALLED_APPS = [
     'core',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
+    'cloudinary_storage',
+    'cloudinary',
 ]
 
 MIDDLEWARE = [
@@ -125,3 +128,13 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 CSRF_TRUSTED_ORIGINS = ['https://web-production-aba75.up.railway.app']
+
+
+
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': 'dswvamyww',
+    'API_KEY': '694593982941785',
+    'API_SECRET': 'i14sNU5aiiqh2yLyWeJPG3lrwcI',
+}
+
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
